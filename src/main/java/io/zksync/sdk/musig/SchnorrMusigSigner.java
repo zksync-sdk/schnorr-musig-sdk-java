@@ -4,7 +4,6 @@ import java.util.Arrays;
 import java.util.Collection;
 
 import io.zksync.sdk.musig.entity.AggregatedCommitment;
-import io.zksync.sdk.musig.entity.AggregatedPublicKey;
 import io.zksync.sdk.musig.entity.AggregatedSignature;
 import io.zksync.sdk.musig.entity.Commitment;
 import io.zksync.sdk.musig.entity.MusigSigner;
@@ -17,10 +16,16 @@ public class SchnorrMusigSigner {
 
     private final SchnorrMusigNative musig;
     private final MusigSigner signer;
+    private final byte[] publicKey;
 
-    SchnorrMusigSigner(SchnorrMusigNative musig, MusigSigner signer) {
+    SchnorrMusigSigner(SchnorrMusigNative musig, MusigSigner signer, byte[] publicKey) {
         this.musig = musig;
         this.signer = signer;
+        this.publicKey = publicKey;
+    }
+
+    public byte[] getPublicKey() {
+        return publicKey;
     }
 
     public Signature sign(byte[] privateKey, byte[] message) throws SchnorrMusigException {
@@ -33,67 +38,6 @@ public class SchnorrMusigSigner {
 
         if (result == SchnorrMusigResultCodes.OK) {
             return signature;
-        } else {
-            throw new SchnorrMusigException(result);
-        }
-    }
-
-    public boolean verify(byte[] message, AggregatedSignature[] signatures,
-            AggregatedPublicKey[] aggregatedPublicKeys) throws SchnorrMusigException {
-        return verify(message, Arrays.asList(signatures), Arrays.asList(aggregatedPublicKeys));
-    }
-
-    public boolean verify(byte[] message, Collection<AggregatedSignature> signatures,
-            Collection<AggregatedPublicKey> aggregatedPublicKeys) throws SchnorrMusigException {
-        byte[] encodedSignature = Bytes.joinStructData(signatures);
-        byte[] encodedPubkeys = Bytes.joinStructData(aggregatedPublicKeys);
-
-        int code = this.musig.schnorr_musig_verify(message, message.length, encodedPubkeys, encodedPubkeys.length,
-                encodedSignature, encodedSignature.length);
-
-        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
-
-        if (result == SchnorrMusigResultCodes.OK) {
-            return true;
-        } else if (result == SchnorrMusigResultCodes.SIGNATURE_VERIFICATION_FAILED) {
-            return false;
-        } else {
-            throw new SchnorrMusigException(result);
-        }
-    }
-
-    public boolean verify(byte[] message, AggregatedSignature[] signatures, byte[] publicKeys)
-            throws SchnorrMusigException {
-        return verify(message, Arrays.asList(signatures), publicKeys);
-    }
-
-    public boolean verify(byte[] message, Collection<AggregatedSignature> signatures, byte[] publicKeys)
-            throws SchnorrMusigException {
-        byte[] encodedSignature = Bytes.joinStructData(signatures);
-
-        int code = this.musig.schnorr_musig_verify(message, message.length, publicKeys, publicKeys.length,
-                encodedSignature, encodedSignature.length);
-
-        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
-
-        if (result == SchnorrMusigResultCodes.OK) {
-            return true;
-        } else if (result == SchnorrMusigResultCodes.SIGNATURE_VERIFICATION_FAILED) {
-            return false;
-        } else {
-            throw new SchnorrMusigException(result);
-        }
-    }
-
-    public AggregatedPublicKey aggregatePublicKeys(byte[] publicKeys) throws SchnorrMusigException {
-        AggregatedPublicKey.ByReference aggregatedPublicKey = new AggregatedPublicKey.ByReference();
-
-        int code = this.musig.schnorr_musig_aggregate_pubkeys(publicKeys, publicKeys.length, aggregatedPublicKey);
-
-        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
-
-        if (result == SchnorrMusigResultCodes.OK) {
-            return aggregatedPublicKey;
         } else {
             throw new SchnorrMusigException(result);
         }

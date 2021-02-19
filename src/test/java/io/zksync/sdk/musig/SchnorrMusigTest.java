@@ -9,7 +9,6 @@ import io.zksync.sdk.musig.exception.SchnorrMusigException;
 import io.zksync.sdk.musig.utils.Bytes;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -47,7 +46,7 @@ public class SchnorrMusigTest {
 
         AggregatedSignature aggregateSignature = signer.aggregateSignature(signature);
 
-        assertTrue(signer.verify(MSG, new AggregatedSignature[]{aggregateSignature}, publicKey));
+        assertTrue(this.musig.verify(MSG, aggregateSignature, publicKey));
     }
 
     @Test
@@ -97,27 +96,13 @@ public class SchnorrMusigTest {
             .collect(Collectors.toList());
         assertTrue(Bytes.verify(aggregatedSignatures));
 
-        AggregatedPublicKey aggregatedPublicKey = signers.get(0).aggregatePublicKeys(allPublicKeys);
+        AggregatedPublicKey aggregatedPublicKey = this.musig.aggregatePublicKeys(allPublicKeys);
 
         /// Check all aggregated signatures to all public keys
-        signers.stream()
-            .map(signer -> signer.verify(MSG, aggregatedSignatures, allPublicKeys))
-            .forEach(r -> assertTrue(r));
+        assertTrue(this.musig.verify(MSG, aggregatedSignatures.get(0), allPublicKeys));
 
         /// Check all aggregated signatures to aggregated public key
-        signers.stream()
-            .map(signer -> signer.verify(MSG, aggregatedSignatures, Collections.singletonList(aggregatedPublicKey)))
-            .forEach(r -> assertTrue(r));
-
-        /// Check first aggregated signature to all public keys
-        IntStream.range(0, signers.size())
-            .mapToObj(pos -> signers.get(pos).verify(MSG, aggregatedSignatures.subList(0, 1), allPublicKeys))
-            .forEach(r -> assertTrue(r));
-
-        /// Check first aggregated signature to aggregated public key
-        IntStream.range(0, signers.size())
-            .mapToObj(pos -> signers.get(pos).verify(MSG, aggregatedSignatures.subList(0, 1), Collections.singletonList(aggregatedPublicKey)))
-            .forEach(r -> assertTrue(r));
+        assertTrue(this.musig.verify(MSG, aggregatedSignatures.get(0), aggregatedPublicKey));
      }
 
 }

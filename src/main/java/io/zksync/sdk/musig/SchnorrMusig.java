@@ -1,6 +1,7 @@
 package io.zksync.sdk.musig;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Native;
@@ -10,8 +11,12 @@ import com.sun.jna.Pointer;
 import org.scijava.nativelib.BaseJniExtractor;
 import org.scijava.nativelib.NativeLoader;
 
+import io.zksync.sdk.musig.entity.AggregatedPublicKey;
+import io.zksync.sdk.musig.entity.AggregatedSignature;
 import io.zksync.sdk.musig.entity.MusigSigner;
+import io.zksync.sdk.musig.exception.SchnorrMusigException;
 import io.zksync.sdk.musig.utils.Bytes;
+import io.zksync.sdk.musig.utils.Constants;
 
 public class SchnorrMusig {
     private static final String LIBRARY_NAME = "musig_c";
@@ -49,7 +54,7 @@ public class SchnorrMusig {
     public SchnorrMusigSigner createSigner(List<byte[]> publicKeys, int position) {
         byte[] encodedPublicKeys = Bytes.join(publicKeys);
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKeys.get(position));
     }
 
     /**
@@ -61,7 +66,8 @@ public class SchnorrMusig {
      */
     public SchnorrMusigSigner createSigner(byte[] encodedPublicKeys, int position) {
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
+        byte[] publicKey = Arrays.copyOfRange(encodedPublicKeys, Constants.STANDARD_ENCODING_LENGTH * position, Constants.STANDARD_ENCODING_LENGTH * position + Constants.STANDARD_ENCODING_LENGTH);
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
     }
 
     /**
@@ -72,7 +78,57 @@ public class SchnorrMusig {
      */
     public SchnorrMusigSigner createSigner(byte[] publicKey) {
         Pointer signer = this.musig.schnorr_musig_new_signer(publicKey, publicKey.length, 0);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
+    }
+
+    public boolean verify(byte[] message, AggregatedSignature signatures, AggregatedPublicKey aggregatedPublicKeys) throws SchnorrMusigException {
+        byte[] encodedSignature = signatures.getData();
+        byte[] encodedPubkeys = aggregatedPublicKeys.getData();
+
+        int code = this.musig.schnorr_musig_verify(message, message.length, encodedPubkeys, encodedPubkeys.length,
+                encodedSignature, encodedSignature.length);
+
+        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
+
+        if (result == SchnorrMusigResultCodes.OK) {
+            return true;
+        } else if (result == SchnorrMusigResultCodes.SIGNATURE_VERIFICATION_FAILED) {
+            return false;
+        } else {
+            throw new SchnorrMusigException(result);
+        }
+    }
+
+    public boolean verify(byte[] message, AggregatedSignature signature, byte[] publicKeys)
+            throws SchnorrMusigException {
+        byte[] encodedSignature = signature.getData();
+
+        int code = this.musig.schnorr_musig_verify(message, message.length, publicKeys, publicKeys.length,
+                encodedSignature, encodedSignature.length);
+
+        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
+
+        if (result == SchnorrMusigResultCodes.OK) {
+            return true;
+        } else if (result == SchnorrMusigResultCodes.SIGNATURE_VERIFICATION_FAILED) {
+            return false;
+        } else {
+            throw new SchnorrMusigException(result);
+        }
+    }
+
+    public AggregatedPublicKey aggregatePublicKeys(byte[] publicKeys) throws SchnorrMusigException {
+        AggregatedPublicKey.ByReference aggregatedPublicKey = new AggregatedPublicKey.ByReference();
+
+        int code = this.musig.schnorr_musig_aggregate_pubkeys(publicKeys, publicKeys.length, aggregatedPublicKey);
+
+        SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
+
+        if (result == SchnorrMusigResultCodes.OK) {
+            return aggregatedPublicKey;
+        } else {
+            throw new SchnorrMusigException(result);
+        }
     }
 
 }
