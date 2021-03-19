@@ -1,7 +1,6 @@
 package io.zksync.sdk.musig;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Native;
@@ -16,7 +15,6 @@ import io.zksync.sdk.musig.entity.AggregatedSignature;
 import io.zksync.sdk.musig.entity.MusigSigner;
 import io.zksync.sdk.musig.exception.SchnorrMusigException;
 import io.zksync.sdk.musig.utils.Bytes;
-import io.zksync.sdk.musig.utils.Constants;
 
 public class SchnorrMusig {
     private static final String LIBRARY_NAME = "musig_c";
@@ -54,7 +52,7 @@ public class SchnorrMusig {
     public SchnorrMusigSigner createSigner(List<byte[]> publicKeys, int position) {
         byte[] encodedPublicKeys = Bytes.join(publicKeys);
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKeys.get(position));
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
     /**
@@ -66,8 +64,7 @@ public class SchnorrMusig {
      */
     public SchnorrMusigSigner createSigner(byte[] encodedPublicKeys, int position) {
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        byte[] publicKey = Arrays.copyOfRange(encodedPublicKeys, Constants.STANDARD_ENCODING_LENGTH * position, Constants.STANDARD_ENCODING_LENGTH * position + Constants.STANDARD_ENCODING_LENGTH);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
     /**
@@ -78,7 +75,7 @@ public class SchnorrMusig {
      */
     public SchnorrMusigSigner createSigner(byte[] publicKey) {
         Pointer signer = this.musig.schnorr_musig_new_signer(publicKey, publicKey.length, 0);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
     public boolean verify(byte[] message, AggregatedSignature signatures, AggregatedPublicKey aggregatedPublicKeys) throws SchnorrMusigException {

@@ -16,16 +16,10 @@ public class SchnorrMusigSigner {
 
     private final SchnorrMusigNative musig;
     private final MusigSigner signer;
-    private final byte[] publicKey;
 
-    SchnorrMusigSigner(SchnorrMusigNative musig, MusigSigner signer, byte[] publicKey) {
+    SchnorrMusigSigner(SchnorrMusigNative musig, MusigSigner signer) {
         this.musig = musig;
         this.signer = signer;
-        this.publicKey = publicKey;
-    }
-
-    public byte[] getPublicKey() {
-        return publicKey;
     }
 
     public Signature sign(byte[] privateKey, byte[] message) throws SchnorrMusigException {
