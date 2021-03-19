@@ -67,17 +67,6 @@ public class SchnorrMusig {
         return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
-    /**
-     * Create signer instance with given public key
-     * 
-     * @param publicKey - signle public key
-     * @return Instance of SchnorrMusigSigner
-     */
-    public SchnorrMusigSigner createSigner(byte[] publicKey) {
-        Pointer signer = this.musig.schnorr_musig_new_signer(publicKey, publicKey.length, 0);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
-    }
-
     public boolean verify(byte[] message, AggregatedSignature signatures, AggregatedPublicKey aggregatedPublicKeys) throws SchnorrMusigException {
         byte[] encodedSignature = signatures.getData();
         byte[] encodedPubkeys = aggregatedPublicKeys.getData();
