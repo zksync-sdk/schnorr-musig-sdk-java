@@ -16,7 +16,7 @@ import io.zksync.sdk.musig.entity.MusigSigner;
 import io.zksync.sdk.musig.exception.SchnorrMusigException;
 import io.zksync.sdk.musig.utils.Bytes;
 
-public class SchnorrMusig {
+public final class SchnorrMusig {
     private static final String LIBRARY_NAME = "musig_c";
 
     private SchnorrMusigNative musig;
@@ -85,11 +85,19 @@ public class SchnorrMusig {
         }
     }
 
-    public boolean verify(byte[] message, AggregatedSignature signature, byte[] publicKeys)
+    public boolean verify(byte[] message, AggregatedSignature signature, List<byte[]> publicKeys)
+            throws SchnorrMusigException {
+
+        byte[] encodedPublicKeys = Bytes.join(publicKeys);
+
+        return verify(message, signature, encodedPublicKeys);
+    }
+
+    public boolean verify(byte[] message, AggregatedSignature signature, byte[] encodedPublicKeys)
             throws SchnorrMusigException {
         byte[] encodedSignature = signature.getData();
 
-        int code = this.musig.schnorr_musig_verify(message, message.length, publicKeys, publicKeys.length,
+        int code = this.musig.schnorr_musig_verify(message, message.length, encodedPublicKeys, encodedPublicKeys.length,
                 encodedSignature, encodedSignature.length);
 
         SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
