@@ -111,10 +111,14 @@ public final class SchnorrMusig {
         }
     }
 
-    public AggregatedPublicKey aggregatePublicKeys(byte[] publicKeys) throws SchnorrMusigException {
+    public AggregatedPublicKey aggregatePublicKeys(List<byte[]> publicKeys) throws SchnorrMusigException {
+        return aggregatePublicKeys(Bytes.join(publicKeys));
+    }
+
+    public AggregatedPublicKey aggregatePublicKeys(byte[] encodedPublicKeys) throws SchnorrMusigException {
         AggregatedPublicKey.ByReference aggregatedPublicKey = new AggregatedPublicKey.ByReference();
 
-        int code = this.musig.schnorr_musig_aggregate_pubkeys(publicKeys, publicKeys.length, aggregatedPublicKey);
+        int code = this.musig.schnorr_musig_aggregate_pubkeys(encodedPublicKeys, encodedPublicKeys.length, aggregatedPublicKey);
 
         SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
 
