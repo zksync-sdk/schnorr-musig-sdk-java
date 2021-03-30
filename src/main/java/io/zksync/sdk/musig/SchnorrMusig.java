@@ -1,7 +1,6 @@
 package io.zksync.sdk.musig;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Native;
@@ -16,9 +15,8 @@ import io.zksync.sdk.musig.entity.AggregatedSignature;
 import io.zksync.sdk.musig.entity.MusigSigner;
 import io.zksync.sdk.musig.exception.SchnorrMusigException;
 import io.zksync.sdk.musig.utils.Bytes;
-import io.zksync.sdk.musig.utils.Constants;
 
-public class SchnorrMusig {
+public final class SchnorrMusig {
     private static final String LIBRARY_NAME = "musig_c";
 
     private SchnorrMusigNative musig;
@@ -54,7 +52,7 @@ public class SchnorrMusig {
     public SchnorrMusigSigner createSigner(List<byte[]> publicKeys, int position) {
         byte[] encodedPublicKeys = Bytes.join(publicKeys);
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKeys.get(position));
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
     /**
@@ -66,19 +64,7 @@ public class SchnorrMusig {
      */
     public SchnorrMusigSigner createSigner(byte[] encodedPublicKeys, int position) {
         Pointer signer = this.musig.schnorr_musig_new_signer(encodedPublicKeys, encodedPublicKeys.length, position);
-        byte[] publicKey = Arrays.copyOfRange(encodedPublicKeys, Constants.STANDARD_ENCODING_LENGTH * position, Constants.STANDARD_ENCODING_LENGTH * position + Constants.STANDARD_ENCODING_LENGTH);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
-    }
-
-    /**
-     * Create signer instance with given public key
-     * 
-     * @param publicKey - signle public key
-     * @return Instance of SchnorrMusigSigner
-     */
-    public SchnorrMusigSigner createSigner(byte[] publicKey) {
-        Pointer signer = this.musig.schnorr_musig_new_signer(publicKey, publicKey.length, 0);
-        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer), publicKey);
+        return new SchnorrMusigSigner(this.musig, new MusigSigner(signer));
     }
 
     public boolean verify(byte[] message, AggregatedSignature signatures, AggregatedPublicKey aggregatedPublicKeys) throws SchnorrMusigException {
@@ -99,11 +85,19 @@ public class SchnorrMusig {
         }
     }
 
-    public boolean verify(byte[] message, AggregatedSignature signature, byte[] publicKeys)
+    public boolean verify(byte[] message, AggregatedSignature signature, List<byte[]> publicKeys)
+            throws SchnorrMusigException {
+
+        byte[] encodedPublicKeys = Bytes.join(publicKeys);
+
+        return verify(message, signature, encodedPublicKeys);
+    }
+
+    public boolean verify(byte[] message, AggregatedSignature signature, byte[] encodedPublicKeys)
             throws SchnorrMusigException {
         byte[] encodedSignature = signature.getData();
 
-        int code = this.musig.schnorr_musig_verify(message, message.length, publicKeys, publicKeys.length,
+        int code = this.musig.schnorr_musig_verify(message, message.length, encodedPublicKeys, encodedPublicKeys.length,
                 encodedSignature, encodedSignature.length);
 
         SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
@@ -117,10 +111,14 @@ public class SchnorrMusig {
         }
     }
 
-    public AggregatedPublicKey aggregatePublicKeys(byte[] publicKeys) throws SchnorrMusigException {
+    public AggregatedPublicKey aggregatePublicKeys(List<byte[]> publicKeys) throws SchnorrMusigException {
+        return aggregatePublicKeys(Bytes.join(publicKeys));
+    }
+
+    public AggregatedPublicKey aggregatePublicKeys(byte[] encodedPublicKeys) throws SchnorrMusigException {
         AggregatedPublicKey.ByReference aggregatedPublicKey = new AggregatedPublicKey.ByReference();
 
-        int code = this.musig.schnorr_musig_aggregate_pubkeys(publicKeys, publicKeys.length, aggregatedPublicKey);
+        int code = this.musig.schnorr_musig_aggregate_pubkeys(encodedPublicKeys, encodedPublicKeys.length, aggregatedPublicKey);
 
         SchnorrMusigResultCodes result = SchnorrMusigResultCodes.byCode(code);
 
