@@ -1,7 +1,7 @@
 package io.zksync.sdk.musig;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
 import org.web3j.utils.Numeric;
 
 import io.zksync.sdk.musig.entity.*;
@@ -22,9 +22,14 @@ public class SchnorrMusigTest {
 
     private SchnorrMusig musig;
 
-    @Before
+    @BeforeEach
     public void init() {
         this.musig = SchnorrMusig.load();
+    }
+
+    @Test
+    public void test() {
+        assertTrue(true);
     }
 
     @Test
