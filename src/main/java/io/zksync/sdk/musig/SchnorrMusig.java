@@ -58,7 +58,7 @@ public final class SchnorrMusig {
     /**
      * Create signer instance with given encoded public keys and position
      * 
-     * @param encodedPublicKeys - encoded list of public keys {@see Bytes.join}
+     * @param encodedPublicKeys - encoded list of public keys @see io.zksync.sdk.musig.utils.Bytes.join
      * @param position - position of public key after encoding
      * @return Instance of SchnorrMusigSigner
      */
